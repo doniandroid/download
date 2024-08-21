@@ -25,18 +25,28 @@
 
         function createListItem(item) {
             const li = document.createElement('li');
+            const link = document.createElement('a');
+
             if (item.type === 'dir') {
-                li.textContent = `📁 ${item.name}`;
-                fetchRepoContents(item.path).then(contents => {
-                    const ul = document.createElement('ul');
-                    contents.forEach(subItem => {
-                        ul.appendChild(createListItem(subItem));
+                link.textContent = `📁 ${item.name}`;
+                link.href = `#`;
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    fetchRepoContents(item.path).then(contents => {
+                        const ul = document.createElement('ul');
+                        contents.forEach(subItem => {
+                            ul.appendChild(createListItem(subItem));
+                        });
+                        li.appendChild(ul);
                     });
-                    li.appendChild(ul);
                 });
             } else {
-                li.textContent = `📄 ${item.name}`;
+                link.textContent = `📄 ${item.name}`;
+                link.href = item.html_url;
+                link.target = '_blank'; // Membuka file di tab baru
             }
+
+            li.appendChild(link);
             return li;
         }
 
