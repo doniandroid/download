@@ -3,62 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File and Folder Detection</title>
+    <title>File Explorer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        ul {
+            list-style-type: none;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <h1>File and Folder List</h1>
-    <ul id="file-list"></ul>
+    <h1>File Explorer</h1>
+    <ul id="fileList"></ul>
 
     <script>
-        // Ganti dengan username dan repo Anda
-        const username = 'doniandroid'; 
-        const repo = 'download';
-        const branch = 'main'; // atau branch lainnya
+        const repoOwner = "doniandroid"; // Ganti dengan username GitHub Anda
+        const repoName = "download"; // Ganti dengan nama repository Anda
+        const branchName = "main"; // Ganti dengan nama branch Anda (misalnya: main, master, dll.)
 
-        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/`;
-
-        async function fetchRepoContents(path = '') {
-            const response = await fetch(`${apiUrl}${path}?ref=${branch}`);
-            const data = await response.json();
-            return data;
+        // Fungsi untuk mengambil data dari GitHub API
+        async function fetchRepoContents(path = "") {
+            const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${path}?ref=${branchName}`;
+            const response = await fetch(url);
+            return response.json();
         }
 
-        function createListItem(item) {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
+        // Fungsi untuk menampilkan file dan folder
+        async function displayFiles(path = "") {
+            const files = await fetchRepoContents(path);
+            const fileList = document.getElementById("fileList");
 
-            if (item.type === 'dir') {
-                link.textContent = `📁 ${item.name}`;
-                link.href = `#`;
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    fetchRepoContents(item.path).then(contents => {
-                        const ul = document.createElement('ul');
-                        contents.forEach(subItem => {
-                            ul.appendChild(createListItem(subItem));
+            files.forEach(file => {
+                const li = document.createElement("li");
+
+                if (file.type === "dir") {
+                    li.innerHTML = `<strong>${file.name}</strong>`;
+                    const nestedList = document.createElement("ul");
+                    li.appendChild(nestedList);
+                    fileList.appendChild(li);
+
+                    // Ambil dan tampilkan konten dari folder ini
+                    fetchRepoContents(file.path).then(contents => {
+                        contents.forEach(subFile => {
+                            const nestedLi = document.createElement("li");
+
+                            if (subFile.type === "dir") {
+                                nestedLi.innerHTML = `<strong>${subFile.name}</strong>`;
+                            } else {
+                                const fileUrl = `https://github.com/${repoOwner}/${repoName}/blob/${branchName}/${subFile.path}`;
+                                nestedLi.innerHTML = `<a href="${fileUrl}" target="_blank">${subFile.name}</a>`;
+                                const copyBtn = document.createElement("button");
+                                copyBtn.textContent = "Copy URL";
+                                copyBtn.onclick = () => {
+                                    navigator.clipboard.writeText(fileUrl);
+                                    alert("URL Copied!");
+                                };
+                                nestedLi.appendChild(copyBtn);
+                            }
+
+                            nestedList.appendChild(nestedLi);
                         });
-                        li.appendChild(ul);
                     });
-                });
-            } else {
-                link.textContent = `📄 ${item.name}`;
-                link.href = item.html_url;
-                link.target = '_blank'; // Membuka file di tab baru
-            }
+                } else {
+                    const fileUrl = `https://github.com/${repoOwner}/${repoName}/blob/${branchName}/${file.path}`;
+                    li.innerHTML = `<a href="${fileUrl}" target="_blank">${file.name}</a>`;
+                    const copyBtn = document.createElement("button");
+                    copyBtn.textContent = "Copy URL";
+                    copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(fileUrl);
+                        alert("URL Copied!");
+                    };
+                    li.appendChild(copyBtn);
+                }
 
-            li.appendChild(link);
-            return li;
-        }
-
-        async function displayRepoContents() {
-            const fileList = document.getElementById('file-list');
-            const contents = await fetchRepoContents();
-            contents.forEach(item => {
-                fileList.appendChild(createListItem(item));
+                fileList.appendChild(li);
             });
         }
 
-        displayRepoContents();
+        // Panggil fungsi untuk menampilkan file dan folder di root repository
+        displayFiles();
     </script>
 </body>
 </html>
