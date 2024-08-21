@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File and Folder Detection</title>
+</head>
+<body>
+    <h1>File and Folder List</h1>
+    <ul id="file-list"></ul>
+
+    <script>
+        // Ganti dengan username dan repo Anda
+        const username = 'doniandroid'; 
+        const repo = 'download';
+        const branch = 'main'; // atau branch lainnya
+
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/`;
+
+        async function fetchRepoContents(path = '') {
+            const response = await fetch(`${apiUrl}${path}?ref=${branch}`);
+            const data = await response.json();
+            return data;
+        }
+
+        function createListItem(item) {
+            const li = document.createElement('li');
+            if (item.type === 'dir') {
+                li.textContent = `📁 ${item.name}`;
+                fetchRepoContents(item.path).then(contents => {
+                    const ul = document.createElement('ul');
+                    contents.forEach(subItem => {
+                        ul.appendChild(createListItem(subItem));
+                    });
+                    li.appendChild(ul);
+                });
+            } else {
+                li.textContent = `📄 ${item.name}`;
+            }
+            return li;
+        }
+
+        async function displayRepoContents() {
+            const fileList = document.getElementById('file-list');
+            const contents = await fetchRepoContents();
+            contents.forEach(item => {
+                fileList.appendChild(createListItem(item));
+            });
+        }
+
+        displayRepoContents();
+    </script>
+</body>
+</html>
