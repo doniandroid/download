@@ -1,4 +1,7 @@
 {
-  "version": "1.1.0",
-  "apkUrl": "https://doniandroid.github.io/download/update/absenku/v1/app-release.apk"
+  "versionName": "1.1.0",
+  "versionCode": "2",
+  "apkUrl": "https://doniandroid.github.io/download/update/absenku/v1/app-release.apk",
+  "force": false,
+  "updateContent": "New features and bug fixes."
 }
