@@ -29,7 +29,7 @@
         async function fetchData() {
             const dataContainer = document.getElementById('json-output');
             try {
-                const querySnapshot = await getDocs(collection(db, "users")); // Ganti "users" dengan nama koleksi Anda
+                const querySnapshot = await getDocs(collection(db, "pegawai")); // Ganti "users" dengan nama koleksi Anda
                 let data = [];
                 querySnapshot.forEach((doc) => {
                     data.push({
