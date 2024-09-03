@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore JSON Data Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firestore Data in JSON Format</h1>
+    <div id="data-container">
+        <pre id="json-output"></pre>
+    </div>
+
+    <script type="module">
+        import { db, collection, getDocs } from './firebase.js';
+
+        async function fetchData() {
+            const dataContainer = document.getElementById('json-output');
+            try {
+                const querySnapshot = await getDocs(collection(db, "users")); // Ganti "users" dengan nama koleksi Anda
+                let data = [];
+                querySnapshot.forEach((doc) => {
+                    data.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                dataContainer.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                dataContainer.textContent = "Error getting documents: " + error;
+            }
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
