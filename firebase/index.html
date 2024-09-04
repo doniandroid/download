@@ -3,47 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firestore JSON Data Display</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        pre {
-            background-color: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-    </style>
+    <title>Firestore Realtime JSON</title>
 </head>
 <body>
-    <h1>Firestore Data in JSON Format</h1>
-    <div id="data-container">
-        <pre id="json-output"></pre>
-    </div>
-
+    <pre id="jsonData"></pre> <!-- Tempat untuk menampilkan JSON -->
+    
+    <!-- Script konfigurasi Firebase -->
     <script type="module">
-        import { db, collection, getDocs } from 'firebase.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-        async function fetchData() {
-            const dataContainer = document.getElementById('json-output');
-            try {
-                const querySnapshot = await getDocs(collection(db, "pegawai")); // Ganti "users" dengan nama koleksi Anda
-                let data = [];
-                querySnapshot.forEach((doc) => {
-                    data.push({
-                        id: doc.id,
-                        ...doc.data()
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXpEVW8mxPHgAkDFv_BKkA1xX_C9V5IT4",
+            authDomain: "absenku-fe810.firebaseapp.com",
+            projectId: "absenku-fe810",
+            storageBucket: "absenku-fe810.appspot.com",
+            messagingSenderId: "135310368249",
+            appId: "1:135310368249:web:08ed2c9ea09c827bd6b128"
+        };
+
+        // Inisialisasi Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const collectionRef = collection(db, "pegawai");
+
+        onSnapshot(collectionRef, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Fungsi untuk mengkonversi hari menjadi day_of_week
+            const dayOfWeekMap = {
+                "Senin": "1",
+                "Selasa": "2",
+                "Rabu": "3",
+                "Kamis": "4",
+                "Jumat": "5",
+                "Sabtu": "6",
+                "Minggu": "0"
+            };
+
+            // Memproses data menjadi format cron jobs
+            const cronjobs = [];
+            data.forEach(person => {
+                if (person.absensi) {
+                    Object.keys(person.absensi).forEach(day => {
+                        const entryTime = person.absensi[day].entryTime;
+                        const exitTime = person.absensi[day].exitTime;
+                        const dayOfWeek = dayOfWeekMap[day];
+                        
+                        if (entryTime) {
+                            cronjobs.push({
+                                name: `Presensi Berangkat ${day} NIP ${person.nip}`,
+                                url: `http://sibkd.semarangkab.go.id/services/internal/skacmatt/insert_presensi.php?nip=${person.nip}`,
+                                method: "GET",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                schedule: {
+                                    day_of_week: dayOfWeek,
+                                    time: entryTime
+                                }
+                            });
+                        }
+                        
+                        if (exitTime) {
+                            cronjobs.push({
+                                name: `Presensi Pulang ${day} NIP ${person.nip}`,
+                                url: `http://sibkd.semarangkab.go.id/services/internal/skacmatt/insert_presensi.php?nip=${person.nip}`,
+                                method: "GET",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                schedule: {
+                                    day_of_week: dayOfWeek,
+                                    time: exitTime
+                                }
+                            });
+                        }
                     });
-                });
-                dataContainer.textContent = JSON.stringify(data, null, 2);
-            } catch (error) {
-                dataContainer.textContent = "Error getting documents: " + error;
-            }
-        }
+                }
+            });
 
-        fetchData();
+            // Menyusun JSON format cronjobs
+            const cronjobsJson = JSON.stringify({ cronjobs: cronjobs }, null, 2);
+
+            // Menampilkan JSON di elemen dengan id 'jsonData'
+            document.getElementById('jsonData').textContent = cronjobsJson;
+        });
     </script>
 </body>
 </html>
